@@ -70,3 +70,13 @@ Se tiver um domínio (ex: `verticalfire.com.br`):
 - WhatsApp: (11) 96888-6837
 - E-mail: ecioronaldo.bombeiro@gmail.com
 - Instagram: @vertical.fire
+
+## Vídeos (adicionar manualmente)
+
+Os arquivos de vídeo não estão incluídos no ZIP por serem pesados.
+Copie os 3 vídeos para a pasta `videos/` com os nomes:
+- `videos/video1.mp4`
+- `videos/video2.mp4`
+- `videos/video3.mp4`
+
+Para o GitHub Pages funcionar com vídeos grandes, considere hospedar no YouTube e usar iframe, ou usar o Git LFS.
