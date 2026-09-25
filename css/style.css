@@ -320,6 +320,8 @@ input, textarea, select {
   width: 44px;
   height: 44px;
   object-fit: contain;
+  border-radius: 50%;
+  background: transparent;
 }
 
 .header__logo-text {
@@ -434,6 +436,16 @@ input, textarea, select {
     rgba(10,22,40,.75) 50%,
     rgba(10,22,40,.45) 100%
   );
+}
+
+.hero__gradient {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 200px;
+  background: linear-gradient(transparent, var(--color-bg));
+  pointer-events: none;
 }
 
 .hero__content {
@@ -1369,6 +1381,7 @@ input, textarea, select {
   width: 48px;
   height: 48px;
   object-fit: contain;
+  border-radius: 50%;
 }
 
 .footer__logo-text {
