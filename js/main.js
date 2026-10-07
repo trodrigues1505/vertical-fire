@@ -3,7 +3,7 @@
 /* ================================================================
    VERTICAL FIRE — main.js
    Comportamentos: header scroll, menu mobile, FAQ accordion,
-   scroll spy nav, animações entrada, formulário, year
+   scroll spy nav, animações entrada, player de vídeo, formulário, year
 ================================================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -16,11 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const header = document.getElementById('header');
 
   function updateHeader() {
-    if (window.scrollY > 20) {
-      header.classList.add('scrolled');
-    } else {
-      header.classList.remove('scrolled');
-    }
+    header.classList.toggle('scrolled', window.scrollY > 20);
   }
 
   window.addEventListener('scroll', updateHeader, { passive: true });
@@ -43,8 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   hamburger.addEventListener('click', () => {
-    const isOpen = nav.classList.contains('open');
-    isOpen ? closeMenu() : openMenu();
+    nav.classList.contains('open') ? closeMenu() : openMenu();
   });
 
   // Fechar ao clicar em link
@@ -57,6 +52,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (nav.classList.contains('open') && !nav.contains(e.target) && !hamburger.contains(e.target)) {
       closeMenu();
     }
+  });
+
+  // Fechar com Esc
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && nav.classList.contains('open')) {
+      closeMenu();
+      hamburger.focus();
+    }
+  });
+
+  // Se a tela crescer com o menu aberto, libera o scroll do body
+  window.matchMedia('(min-width: 861px)').addEventListener('change', (e) => {
+    if (e.matches) closeMenu();
   });
 
   // ── Scroll spy (nav ativa) ─────────────────────────────────
@@ -107,7 +115,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── Animações de entrada (IntersectionObserver) ────────────
   if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    // Adicionar classes fade-up aos elementos
     const animTargets = [
       '.nr-card',
       '.servico-card',
@@ -121,12 +128,14 @@ document.addEventListener('DOMContentLoaded', () => {
     ];
 
     animTargets.forEach(selector => {
-      document.querySelectorAll(selector).forEach(el => {
+      document.querySelectorAll(selector).forEach((el, i) => {
         el.classList.add('fade-up');
+        // Escalonamento curto, em grupos de 4, só para a entrada
+        el.style.transitionDelay = `${(i % 4) * 60}ms`;
       });
     });
 
-    // Hero já visível
+    // Entrada do hero
     document.querySelectorAll('.hero__content > *').forEach((el, i) => {
       el.style.opacity = '0';
       el.style.transform = 'translateY(20px)';
@@ -135,19 +144,70 @@ document.addEventListener('DOMContentLoaded', () => {
         el.style.opacity = '';
         el.style.transform = '';
       }));
+      // Remove a transição inline depois da entrada (senão ela anula o hover dos botões)
+      setTimeout(() => { el.style.transition = ''; }, 600 + i * 100 + 100);
     });
 
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-          observer.unobserve(entry.target);
-        }
+        if (!entry.isIntersecting) return;
+        const el = entry.target;
+        el.classList.add('visible');
+        observer.unobserve(el);
+
+        // Terminada a entrada, devolve o elemento ao CSS normal (hover etc.)
+        const delay = parseInt(el.style.transitionDelay, 10) || 0;
+        setTimeout(() => {
+          el.classList.remove('fade-up', 'fade-in', 'visible');
+          el.style.transitionDelay = '';
+        }, 400 + delay + 100);
       });
     }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
 
     document.querySelectorAll('.fade-up, .fade-in').forEach(el => observer.observe(el));
   }
+
+  // ── Player de vídeo customizado ────────────────────────────
+  // Sem JS, os controles nativos continuam funcionando (atributo "controls" no HTML).
+  const players = document.querySelectorAll('.video-card__player');
+
+  players.forEach(player => {
+    const video = player.querySelector('video');
+    if (!video) return;
+
+    video.removeAttribute('controls');
+    video.setAttribute('playsinline', '');
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'video-play';
+    btn.setAttribute('aria-label', `Reproduzir: ${video.getAttribute('aria-label') || 'vídeo'}`);
+    btn.innerHTML = `
+      <span class="video-play__icon" aria-hidden="true">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      </span>`;
+    player.appendChild(btn);
+
+    btn.addEventListener('click', () => {
+      // Só um vídeo por vez
+      players.forEach(other => {
+        const v = other.querySelector('video');
+        if (v && v !== video) v.pause();
+      });
+      video.controls = true;
+      btn.hidden = true;
+      video.play().catch(() => {
+        // Falha ao reproduzir (arquivo ausente, bloqueio): volta ao estado inicial
+        video.controls = false;
+        btn.hidden = false;
+      });
+    });
+
+    video.addEventListener('ended', () => {
+      video.controls = false;
+      btn.hidden = false;
+    });
+  });
 
   // ── Formulário: envio via WhatsApp ─────────────────────────
   const form = document.getElementById('form-contato');
@@ -203,7 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
       fontSize:      '14px',
       fontWeight:    '500',
       color:         '#fff',
-      background:    type === 'success' ? '#22C55E' : type === 'error' ? '#EF4444' : '#1E3355',
+      background:    type === 'success' ? '#15803D' : type === 'error' ? '#B91C1C' : '#1E3355',
       boxShadow:     '0 4px 20px rgba(0,0,0,.4)',
       maxWidth:      '320px',
       lineHeight:    '1.5',
@@ -214,12 +274,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.body.appendChild(toast);
     requestAnimationFrame(() => requestAnimationFrame(() => {
-      toast.style.opacity  = '1';
+      toast.style.opacity   = '1';
       toast.style.transform = 'translateY(0)';
     }));
 
     setTimeout(() => {
-      toast.style.opacity  = '0';
+      toast.style.opacity   = '0';
       toast.style.transform = 'translateY(8px)';
       setTimeout(() => toast.remove(), 300);
     }, 4000);
@@ -228,7 +288,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // ── Smooth scroll para âncoras ─────────────────────────────
   document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', (e) => {
-      const target = document.querySelector(anchor.getAttribute('href'));
+      const href = anchor.getAttribute('href');
+      // href="#" (links de Privacidade/Termos) não é seletor válido:
+      // querySelector('#') lança SyntaxError.
+      if (!href || href === '#') return;
+      const target = document.querySelector(href);
       if (!target) return;
       e.preventDefault();
       target.scrollIntoView({ behavior: 'smooth', block: 'start' });
